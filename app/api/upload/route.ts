@@ -38,7 +38,8 @@ export async function POST(request: NextRequest) {
   });
 
   if (error) {
-    return NextResponse.json({ error: error.message }, { status: 500 });
+    console.error(`[upload] bucket=${bucket} path=${path} error=${error.message}`);
+    return NextResponse.json({ error: `storage error (${bucket}): ${error.message}` }, { status: 500 });
   }
 
   const publicUrl =
