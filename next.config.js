@@ -18,13 +18,8 @@ const nextConfig = {
       },
     ],
   },
-  experimental: {
-    serverActions: {
-      // Macro binaries (.zip, .exe) can exceed the default 1MB server-action
-      // body limit. Bump to 50MB; upload larger files via the Supabase
-      // dashboard and set file_path manually.
-      bodySizeLimit: "50mb",
-    },
+  serverActions: {
+    bodySizeLimit: "50mb",
   },
 };
 
