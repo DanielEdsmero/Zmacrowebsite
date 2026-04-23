@@ -10,9 +10,25 @@ type Props = {
   action: (formData: FormData) => Promise<void>;
 };
 
+async function uploadFile(
+  file: File,
+  bucket: "covers" | "screenshots" | "files",
+): Promise<{ path: string; publicUrl: string | null }> {
+  const body = new FormData();
+  body.append("file", file);
+  body.append("bucket", bucket);
+  const res = await fetch("/api/upload", { method: "POST", body });
+  if (!res.ok) {
+    const { error } = await res.json().catch(() => ({ error: "upload failed" }));
+    throw new Error(error ?? "upload failed");
+  }
+  return res.json();
+}
+
 export function MacroForm({ mode, initial, action }: Props) {
   const [pending, startTransition] = useTransition();
   const [error, setError] = useState<string | null>(null);
+  const [uploadStatus, setUploadStatus] = useState("");
 
   const [name, setName] = useState(initial?.name ?? "");
   const [slug, setSlug] = useState(initial?.slug ?? "");
@@ -34,14 +50,48 @@ export function MacroForm({ mode, initial, action }: Props) {
     e.preventDefault();
     setError(null);
     const form = e.currentTarget;
-    const formData = new FormData(form);
+    const raw = new FormData(form);
 
     startTransition(async () => {
       try {
+        const formData = new FormData();
+
+        // Copy all text fields
+        for (const [key, value] of raw.entries()) {
+          if (typeof value === "string") formData.append(key, value);
+        }
+
+        // Upload macro file
+        const macroFileInput = form.elements.namedItem("macro_file") as HTMLInputElement;
+        const macroFile = macroFileInput?.files?.[0];
+        if (macroFile) {
+          setUploadStatus("uploading macro file...");
+          const { path } = await uploadFile(macroFile, "files");
+          formData.append("file_path", path);
+        }
+
+        // Upload cover image
+        const coverInput = form.elements.namedItem("cover") as HTMLInputElement;
+        const coverFile = coverInput?.files?.[0];
+        if (coverFile) {
+          setUploadStatus("uploading cover...");
+          const { publicUrl } = await uploadFile(coverFile, "covers");
+          if (publicUrl) formData.append("cover_url", publicUrl);
+        }
+
+        // Upload screenshots
+        const screenshotsInput = form.elements.namedItem("screenshots") as HTMLInputElement;
+        const screenshotFiles = Array.from(screenshotsInput?.files ?? []);
+        for (let i = 0; i < screenshotFiles.length; i++) {
+          setUploadStatus(`uploading screenshot ${i + 1}/${screenshotFiles.length}...`);
+          const { publicUrl } = await uploadFile(screenshotFiles[i], "screenshots");
+          if (publicUrl) formData.append("screenshot_url", publicUrl);
+        }
+
+        setUploadStatus("saving...");
         await action(formData);
       } catch (err) {
-        // Next.js redirect() throws a sentinel error to trigger navigation.
-        // Let it bubble so the redirect actually happens.
+        setUploadStatus("");
         if (
           err &&
           typeof err === "object" &&
@@ -202,6 +252,9 @@ export function MacroForm({ mode, initial, action }: Props) {
         published (visible on home)
       </label>
 
+      {uploadStatus && !error ? (
+        <p className="text-xs text-lime-dim">&gt; {uploadStatus}</p>
+      ) : null}
       {error ? <p className="text-xs text-red-400">[err] {error}</p> : null}
 
       <div className="flex items-center gap-3">
@@ -211,7 +264,7 @@ export function MacroForm({ mode, initial, action }: Props) {
           className="border border-lime-term bg-black px-6 py-2 text-xs uppercase tracking-widest text-lime-term hover:bg-lime-term hover:text-black disabled:opacity-50"
         >
           {pending
-            ? "saving..."
+            ? uploadStatus || "saving..."
             : mode === "create"
               ? "> create macro"
               : "> save changes"}
