@@ -242,7 +242,7 @@ export default async function StatsPage() {
                 </tr>
               </thead>
               <tbody>
-                {(recentDls as {
+                {(recentDls as unknown as {
                   downloaded_at: string;
                   ip: string | null;
                   macros: { name: string } | null;
