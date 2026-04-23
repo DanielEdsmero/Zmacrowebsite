@@ -70,6 +70,7 @@ function readFields(formData: FormData): Omit<MacroInput, "cover_url" | "file_pa
 }
 
 export async function createMacroAction(formData: FormData) {
+  try {
   await assertAdmin();
   const fields = readFields(formData);
 
@@ -95,6 +96,11 @@ export async function createMacroAction(formData: FormData) {
   revalidatePath("/");
   revalidatePath("/admin");
   redirect("/admin");
+  } catch (err) {
+    if (err && typeof err === "object" && "digest" in err) throw err;
+    console.error("[createMacroAction]", err);
+    throw err;
+  }
 }
 
 export async function updateMacroAction(formData: FormData) {
