@@ -1,0 +1,62 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+:root {
+  color-scheme: dark;
+}
+
+html,
+body {
+  background: #000;
+  color: #39ff14;
+}
+
+a {
+  color: inherit;
+}
+
+::selection {
+  background: #39ff14;
+  color: #000;
+}
+
+/* CRT scanline overlay — used by <ScanlineOverlay /> on hero blocks. */
+.crt-scanlines {
+  background-image: repeating-linear-gradient(
+    to bottom,
+    rgba(0, 0, 0, 0) 0px,
+    rgba(0, 0, 0, 0) 2px,
+    rgba(0, 0, 0, 0.35) 3px,
+    rgba(0, 0, 0, 0.35) 4px
+  );
+}
+
+.crt-flicker {
+  animation: crt-flicker 3.2s infinite steps(1);
+}
+
+@keyframes crt-flicker {
+  0%,
+  100% {
+    opacity: 1;
+  }
+  47% {
+    opacity: 1;
+  }
+  48% {
+    opacity: 0.85;
+  }
+  49% {
+    opacity: 1;
+  }
+  82% {
+    opacity: 1;
+  }
+  83% {
+    opacity: 0.9;
+  }
+  84% {
+    opacity: 1;
+  }
+}
