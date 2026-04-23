@@ -34,6 +34,16 @@ create table if not exists download_logs (
 create index if not exists download_logs_macro_id_downloaded_at_idx
   on download_logs (macro_id, downloaded_at desc);
 
+-- Atomic increment for download_count — avoids read-modify-write races.
+create or replace function increment_download_count(p_macro_id uuid)
+returns void
+language sql
+as $$
+  update macros
+    set download_count = download_count + 1
+    where id = p_macro_id;
+$$;
+
 -- Keep updated_at fresh on writes.
 create or replace function set_updated_at()
 returns trigger
