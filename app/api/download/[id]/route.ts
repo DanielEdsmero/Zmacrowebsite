@@ -8,14 +8,15 @@ const SIGNED_URL_TTL_SECONDS = 60;
 
 async function handle(
   request: NextRequest,
-  { params }: { params: { id: string } },
+  { params }: { params: Promise<{ id: string }> },
 ) {
+  const { id } = await params;
   const supabase = createAdminClient();
 
   const { data: macro, error } = await supabase
     .from("macros")
     .select("id, file_path, published")
-    .eq("id", params.id)
+    .eq("id", id)
     .maybeSingle();
 
   if (error || !macro || !macro.published) {

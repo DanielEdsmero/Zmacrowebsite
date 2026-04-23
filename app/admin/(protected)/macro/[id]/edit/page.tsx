@@ -6,11 +6,10 @@ import { updateMacroAction } from "../../actions";
 
 export const dynamic = "force-dynamic";
 
-export default async function EditMacroPage({
-  params,
-}: {
-  params: { id: string };
+export default async function EditMacroPage(props: {
+  params: Promise<{ id: string }>;
 }) {
+  const params = await props.params;
   const supabase = createAdminClient();
   const { data } = await supabase
     .from("macros")

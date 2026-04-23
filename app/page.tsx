@@ -7,7 +7,7 @@ import type { Macro } from "@/lib/types";
 export const revalidate = 30;
 
 export default async function HomePage() {
-  const supabase = createClient();
+  const supabase = await createClient();
   const { data, error } = await supabase
     .from("macros")
     .select("*")

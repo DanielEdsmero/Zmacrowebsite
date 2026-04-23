@@ -13,12 +13,11 @@ function formatPrice(price: number | string) {
   return `$${n.toFixed(2)}`;
 }
 
-export default async function MacroDetailPage({
-  params,
-}: {
-  params: { slug: string };
+export default async function MacroDetailPage(props: {
+  params: Promise<{ slug: string }>;
 }) {
-  const supabase = createClient();
+  const params = await props.params;
+  const supabase = await createClient();
   const { data } = await supabase
     .from("macros")
     .select("*")

@@ -4,7 +4,7 @@ import { createClient } from "@/lib/supabase/server";
 export const dynamic = "force-dynamic";
 
 export async function POST(request: NextRequest) {
-  const supabase = createClient();
+  const supabase = await createClient();
   await supabase.auth.signOut();
   return NextResponse.redirect(new URL("/admin/login", request.url), 303);
 }
