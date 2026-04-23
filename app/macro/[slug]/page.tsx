@@ -2,6 +2,7 @@ import { notFound } from "next/navigation";
 import { Nav } from "@/components/Nav";
 import { DownloadButton } from "@/components/DownloadButton";
 import { ScanlineOverlay } from "@/components/ScanlineOverlay";
+import { PageViewTracker } from "@/components/PageViewTracker";
 import { createClient } from "@/lib/supabase/server";
 import type { Macro } from "@/lib/types";
 
@@ -30,6 +31,7 @@ export default async function MacroDetailPage(props: {
 
   return (
     <>
+      <PageViewTracker macroId={macro.id} />
       <Nav />
 
       <section className="relative overflow-hidden border-b border-lime-term/30">

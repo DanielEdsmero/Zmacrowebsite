@@ -31,12 +31,20 @@ export default async function ProtectedAdminLayout({
     <>
       <header className="border-b border-lime-term/30">
         <div className="mx-auto flex max-w-6xl items-center justify-between px-4 py-4">
-          <Link
-            href="/admin"
-            className="text-lg uppercase tracking-widest text-lime-term"
-          >
-            &gt; admin
-          </Link>
+          <div className="flex items-center gap-4">
+            <Link
+              href="/admin"
+              className="text-lg uppercase tracking-widest text-lime-term"
+            >
+              &gt; admin
+            </Link>
+            <Link
+              href="/admin/stats"
+              className="text-xs uppercase tracking-widest text-lime-dim hover:text-lime-term"
+            >
+              stats
+            </Link>
+          </div>
           <div className="flex items-center gap-4 text-xs text-lime-dim">
             <span>{user.email}</span>
             <Link href="/" className="hover:text-lime-term">
