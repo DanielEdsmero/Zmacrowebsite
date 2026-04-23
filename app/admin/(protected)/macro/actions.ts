@@ -26,51 +26,6 @@ function str(formData: FormData, key: string): string {
   return typeof v === "string" ? v : "";
 }
 
-function file(formData: FormData, key: string): File | null {
-  const v = formData.get(key);
-  return v instanceof File && v.size > 0 ? v : null;
-}
-
-function files(formData: FormData, key: string): File[] {
-  return formData
-    .getAll(key)
-    .filter((v): v is File => v instanceof File && v.size > 0);
-}
-
-function extOf(f: File): string {
-  const m = f.name.match(/\.[A-Za-z0-9]+$/);
-  return m ? m[0].toLowerCase() : "";
-}
-
-function randomPath(prefix: string, f: File): string {
-  const id =
-    globalThis.crypto?.randomUUID?.() ??
-    Math.random().toString(36).slice(2) + Date.now().toString(36);
-  return `${prefix}/${id}${extOf(f)}`;
-}
-
-async function uploadToBucket(
-  bucket: "covers" | "screenshots" | "files",
-  f: File,
-  pathPrefix: string,
-): Promise<{ path: string; publicUrl: string | null }> {
-  const admin = createAdminClient();
-  const path = randomPath(pathPrefix, f);
-  const { error } = await admin.storage.from(bucket).upload(path, f, {
-    cacheControl: "3600",
-    upsert: false,
-    contentType: f.type || undefined,
-  });
-  if (error) throw new Error(`upload failed (${bucket}): ${error.message}`);
-
-  const publicUrl =
-    bucket === "files"
-      ? null
-      : admin.storage.from(bucket).getPublicUrl(path).data.publicUrl;
-
-  return { path, publicUrl };
-}
-
 type MacroInput = {
   name: string;
   slug: string;
@@ -115,33 +70,17 @@ function readFields(formData: FormData): Omit<MacroInput, "cover_url" | "file_pa
 }
 
 export async function createMacroAction(formData: FormData) {
-  try {
   await assertAdmin();
   const fields = readFields(formData);
 
-  const coverFile = file(formData, "cover");
-  const screenshotFiles = files(formData, "screenshots");
-  const macroFile = file(formData, "macro_file");
+  const filePath = str(formData, "file_path").trim();
+  if (!filePath) throw new Error("macro file is required");
 
-  if (!macroFile) throw new Error("macro file is required");
-
-  const { path: filePath } = await uploadToBucket(
-    "files",
-    macroFile,
-    "uploads",
-  );
-
-  let coverUrl: string | null = null;
-  if (coverFile) {
-    const uploaded = await uploadToBucket("covers", coverFile, "uploads");
-    coverUrl = uploaded.publicUrl;
-  }
-
-  const screenshotUrls: string[] = [];
-  for (const sf of screenshotFiles) {
-    const uploaded = await uploadToBucket("screenshots", sf, "uploads");
-    if (uploaded.publicUrl) screenshotUrls.push(uploaded.publicUrl);
-  }
+  const coverUrl = str(formData, "cover_url").trim() || null;
+  const screenshotUrls = formData
+    .getAll("screenshot_url")
+    .map((v) => String(v))
+    .filter(Boolean);
 
   const admin = createAdminClient();
   const { error } = await admin.from("macros").insert({
@@ -156,11 +95,6 @@ export async function createMacroAction(formData: FormData) {
   revalidatePath("/");
   revalidatePath("/admin");
   redirect("/admin");
-  } catch (err) {
-    if (err && typeof err === "object" && "digest" in err) throw err;
-    console.error("[createMacroAction]", err);
-    throw new Error(err instanceof Error ? err.message : "unknown error");
-  }
 }
 
 export async function updateMacroAction(formData: FormData) {
@@ -178,37 +112,20 @@ export async function updateMacroAction(formData: FormData) {
     .maybeSingle();
   if (loadErr || !existing) throw new Error("macro not found");
 
-  const coverFile = file(formData, "cover");
-  const screenshotFiles = files(formData, "screenshots");
-  const macroFile = file(formData, "macro_file");
+  const newCoverUrl = str(formData, "cover_url").trim();
+  const coverUrl: string | null = newCoverUrl || existing.cover_url;
 
-  let coverUrl: string | null = existing.cover_url;
-  if (coverFile) {
-    const uploaded = await uploadToBucket("covers", coverFile, "uploads");
-    coverUrl = uploaded.publicUrl;
-  }
+  const newFilePath = str(formData, "file_path").trim();
+  const filePath: string = newFilePath || existing.file_path;
 
-  let filePath: string = existing.file_path;
-  if (macroFile) {
-    const uploaded = await uploadToBucket("files", macroFile, "uploads");
-    filePath = uploaded.path;
-  }
-
-  // Screenshots: if new ones uploaded, replace the whole array. Otherwise
-  // keep the existing ones. (Keeps the UI simple; replacement is the common
-  // edit pattern.)
-  let screenshotUrls: string[] = (existing.screenshots as string[]) ?? [];
-  if (screenshotFiles.length > 0) {
-    screenshotUrls = [];
-    for (const sf of screenshotFiles) {
-      const uploaded = await uploadToBucket(
-        "screenshots",
-        sf,
-        "uploads",
-      );
-      if (uploaded.publicUrl) screenshotUrls.push(uploaded.publicUrl);
-    }
-  }
+  const newScreenshotUrls = formData
+    .getAll("screenshot_url")
+    .map((v) => String(v))
+    .filter(Boolean);
+  const screenshotUrls: string[] =
+    newScreenshotUrls.length > 0
+      ? newScreenshotUrls
+      : (existing.screenshots as string[]) ?? [];
 
   const { error } = await admin
     .from("macros")
