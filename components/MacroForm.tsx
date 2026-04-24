@@ -40,6 +40,7 @@ export function MacroForm({ mode, initial, action }: Props) {
     initial ? String(initial.price_usd ?? 0) : "0",
   );
   const [published, setPublished] = useState(initial?.published ?? false);
+  const [githubUrl, setGithubUrl] = useState(initial?.github_url ?? "");
 
   function handleNameChange(value: string) {
     setName(value);
@@ -239,6 +240,17 @@ export function MacroForm({ mode, initial, action }: Props) {
             current: {initial.file_path}
           </p>
         ) : null}
+      </Field>
+
+      <Field label="github url (optional)">
+        <input
+          name="github_url"
+          type="url"
+          placeholder="https://github.com/..."
+          value={githubUrl ?? ""}
+          onChange={(e) => setGithubUrl(e.target.value)}
+          className={inputCls}
+        />
       </Field>
 
       <label className="flex items-center gap-3 text-xs uppercase tracking-widest text-lime-dim">

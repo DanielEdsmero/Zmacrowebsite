@@ -11,6 +11,7 @@ export type Macro = {
   screenshots: string[];
   published: boolean;
   download_count: number;
+  github_url: string | null;
   created_at: string;
   updated_at: string;
 };

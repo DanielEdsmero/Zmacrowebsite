@@ -93,12 +93,22 @@ export default async function MacroDetailPage(props: {
               {macro.short_description}
             </p>
 
-            <div className="pt-4">
+            <div className="flex flex-wrap items-center gap-3 pt-4">
               <DownloadButton
                 macroId={macro.id}
                 variant="hero"
                 label={`DOWNLOAD ${macro.version}`}
               />
+              {macro.github_url && (
+                <a
+                  href={macro.github_url}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="border border-lime-term/50 px-4 py-2 text-xs uppercase tracking-wider text-lime-dim transition-colors hover:border-lime-term hover:text-lime-term"
+                >
+                  &gt; github
+                </a>
+              )}
             </div>
           </div>
         </div>
