@@ -22,3 +22,18 @@ export type DownloadLog = {
   user_agent: string | null;
   downloaded_at: string;
 };
+
+export type Review = {
+  id: string;
+  macro_id: string;
+  author_name: string;
+  rating: number;
+  body: string | null;
+  safety_vote: "safe" | "virus" | "unsure" | null;
+  ip: string | null;
+  created_at: string;
+};
+
+export type ReviewWithMacro = Review & {
+  macros: { name: string; slug: string } | null;
+};

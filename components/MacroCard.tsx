@@ -8,7 +8,15 @@ function formatPrice(price: number | string) {
   return `$${n.toFixed(2)}`;
 }
 
-export function MacroCard({ macro }: { macro: Macro }) {
+export function MacroCard({
+  macro,
+  avgRating,
+  reviewCount,
+}: {
+  macro: Macro;
+  avgRating?: number;
+  reviewCount?: number;
+}) {
   const price = formatPrice(macro.price_usd);
 
   return (
@@ -48,6 +56,18 @@ export function MacroCard({ macro }: { macro: Macro }) {
         <p className="flex-1 text-xs leading-relaxed text-lime-dim">
           {macro.short_description}
         </p>
+
+        {avgRating !== undefined && reviewCount !== undefined && (
+          <div className="text-xs text-lime-term">
+            <span>{"★".repeat(Math.round(avgRating))}</span>
+            <span className="text-lime-term/25">
+              {"★".repeat(5 - Math.round(avgRating))}
+            </span>
+            <span className="ml-1.5 text-lime-dim">
+              {avgRating.toFixed(1)} ({reviewCount})
+            </span>
+          </div>
+        )}
 
         <div className="flex items-center justify-between pt-2">
           <span className="text-sm">{price}</span>

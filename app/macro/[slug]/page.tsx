@@ -3,8 +3,10 @@ import { Nav } from "@/components/Nav";
 import { DownloadButton } from "@/components/DownloadButton";
 import { ScanlineOverlay } from "@/components/ScanlineOverlay";
 import { PageViewTracker } from "@/components/PageViewTracker";
+import { ReviewForm } from "@/components/ReviewForm";
+import { ReviewList } from "@/components/ReviewList";
 import { createClient } from "@/lib/supabase/server";
-import type { Macro } from "@/lib/types";
+import type { Macro, Review } from "@/lib/types";
 
 export const revalidate = 30;
 
@@ -14,20 +16,37 @@ function formatPrice(price: number | string) {
   return `$${n.toFixed(2)}`;
 }
 
+function avgRating(reviews: Review[]) {
+  if (reviews.length === 0) return null;
+  const sum = reviews.reduce((s, r) => s + r.rating, 0);
+  return (sum / reviews.length).toFixed(1);
+}
+
 export default async function MacroDetailPage(props: {
   params: Promise<{ slug: string }>;
 }) {
   const params = await props.params;
   const supabase = await createClient();
-  const { data } = await supabase
+
+  const macroRes = await supabase
     .from("macros")
     .select("*")
     .eq("slug", params.slug)
     .eq("published", true)
     .maybeSingle();
 
-  if (!data) notFound();
-  const macro = data as Macro;
+  if (!macroRes.data) notFound();
+  const macro = macroRes.data as Macro;
+
+  const reviewsRes = await supabase
+    .from("reviews")
+    .select("*")
+    .eq("macro_id", macro.id)
+    .order("created_at", { ascending: false });
+
+  const reviews = (reviewsRes.data ?? []) as Review[];
+
+  const avg = avgRating(reviews);
 
   return (
     <>
@@ -58,6 +77,12 @@ export default async function MacroDetailPage(props: {
               </span>
               <span>{formatPrice(macro.price_usd)}</span>
               <span>dl: {macro.download_count}</span>
+              {avg && (
+                <span className="text-lime-term">
+                  ★ {avg}{" "}
+                  <span className="text-lime-dim">({reviews.length})</span>
+                </span>
+              )}
             </div>
 
             <h1 className="text-2xl uppercase tracking-widest md:text-4xl">
@@ -118,6 +143,29 @@ export default async function MacroDetailPage(props: {
           <p className="text-sm">
             current: <span className="text-lime-term">{macro.version}</span>
           </p>
+        </section>
+
+        {/* Reviews */}
+        <section>
+          <h2 className="mb-4 text-xs uppercase tracking-widest text-lime-dim">
+            // reviews{" "}
+            {reviews.length > 0 && (
+              <span className="text-lime-term/60">({reviews.length})</span>
+            )}
+          </h2>
+          <ReviewList reviews={reviews} />
+        </section>
+
+        {/* Leave a review */}
+        <section>
+          <h2 className="mb-4 text-xs uppercase tracking-widest text-lime-dim">
+            // leave a review
+          </h2>
+          <p className="mb-4 text-xs text-lime-dim">
+            &gt; no account needed. tell others if it works, what it does, or
+            flag it as a virus.
+          </p>
+          <ReviewForm macroId={macro.id} macroSlug={macro.slug} />
         </section>
       </main>
 
