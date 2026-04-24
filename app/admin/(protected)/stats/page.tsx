@@ -1,4 +1,5 @@
 import { createAdminClient } from "@/lib/supabase/admin";
+import { LocalTime } from "./local-time";
 
 export const dynamic = "force-dynamic";
 
@@ -249,7 +250,7 @@ export default async function StatsPage() {
                 }[]).map((dl, i) => (
                   <tr key={i} className="border-b border-lime-term/10">
                     <td className="py-1.5 pr-4 text-lime-dim">
-                      {new Date(dl.downloaded_at).toLocaleString()}
+                      <LocalTime iso={dl.downloaded_at} />
                     </td>
                     <td className="py-1.5 pr-4">{dl.macros?.name ?? "—"}</td>
                     <td className="py-1.5 text-lime-dim">{dl.ip ?? "—"}</td>
