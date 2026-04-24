@@ -38,3 +38,17 @@ export type Review = {
 export type ReviewWithMacro = Review & {
   macros: { name: string; slug: string } | null;
 };
+
+export type Vouch = {
+  id: string;
+  macro_id: string | null;
+  image_url: string;
+  caption: string | null;
+  author_name: string;
+  ip: string | null;
+  created_at: string;
+};
+
+export type VouchWithMacro = Vouch & {
+  macros: { name: string; slug: string } | null;
+};

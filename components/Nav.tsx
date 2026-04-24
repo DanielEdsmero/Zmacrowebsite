@@ -9,9 +9,12 @@ export function Nav() {
           <span className="text-lime-term">Z_MACRO</span>
           <span className="ml-1 animate-pulse text-lime-term">_</span>
         </Link>
-        <nav className="text-xs uppercase tracking-widest text-lime-dim">
+        <nav className="flex gap-6 text-xs uppercase tracking-widest text-lime-dim">
           <Link href="/" className="hover:text-lime-term">
             macros
+          </Link>
+          <Link href="/vouches" className="hover:text-lime-term">
+            vouches
           </Link>
         </nav>
       </div>

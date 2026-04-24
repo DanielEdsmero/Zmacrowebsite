@@ -3,8 +3,9 @@ import { Nav } from "@/components/Nav";
 import { MacroCard } from "@/components/MacroCard";
 import { ScanlineOverlay } from "@/components/ScanlineOverlay";
 import { PageViewTracker } from "@/components/PageViewTracker";
+import { VouchMarquee } from "@/components/VouchMarquee";
 import { createClient } from "@/lib/supabase/server";
-import type { Macro, ReviewWithMacro } from "@/lib/types";
+import type { Macro, ReviewWithMacro, VouchWithMacro } from "@/lib/types";
 
 export const revalidate = 30;
 
@@ -17,7 +18,7 @@ const safetyConfig = {
 export default async function HomePage() {
   const supabase = await createClient();
 
-  const [macroRes, ratingsRes, recentRes] = await Promise.all([
+  const [macroRes, ratingsRes, recentRes, vouchRes] = await Promise.all([
     supabase
       .from("macros")
       .select("*")
@@ -31,6 +32,12 @@ export default async function HomePage() {
       .select("*, macros(name, slug)")
       .order("created_at", { ascending: false })
       .limit(6),
+    // Vouches for the marquee
+    supabase
+      .from("vouches")
+      .select("*, macros(name, slug)")
+      .order("created_at", { ascending: false })
+      .limit(30),
   ]);
 
   const macros = (macroRes.data ?? []) as Macro[];
@@ -49,6 +56,7 @@ export default async function HomePage() {
   }
 
   const recentReviews = (recentRes.data ?? []) as ReviewWithMacro[];
+  const vouches = (vouchRes.data ?? []) as VouchWithMacro[];
 
   return (
     <>
@@ -66,6 +74,8 @@ export default async function HomePage() {
         </div>
         <ScanlineOverlay />
       </section>
+
+      <VouchMarquee vouches={vouches} />
 
       <main className="mx-auto max-w-6xl px-4 py-10">
         {macroRes.error ? (
