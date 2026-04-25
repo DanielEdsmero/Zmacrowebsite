@@ -41,6 +41,7 @@ export function MacroForm({ mode, initial, action }: Props) {
   );
   const [published, setPublished] = useState(initial?.published ?? false);
   const [githubUrl, setGithubUrl] = useState(initial?.github_url ?? "");
+  const [youtubeUrl, setYoutubeUrl] = useState(initial?.youtube_url ?? "");
 
   function handleNameChange(value: string) {
     setName(value);
@@ -251,6 +252,20 @@ export function MacroForm({ mode, initial, action }: Props) {
           onChange={(e) => setGithubUrl(e.target.value)}
           className={inputCls}
         />
+      </Field>
+
+      <Field label="youtube tutorial url (optional)">
+        <input
+          name="youtube_url"
+          type="url"
+          placeholder="https://youtube.com/watch?v=..."
+          value={youtubeUrl ?? ""}
+          onChange={(e) => setYoutubeUrl(e.target.value)}
+          className={inputCls}
+        />
+        <p className="mt-1 text-xs text-lime-dim">
+          paste a youtube link — the video will embed on the macro page and tutorials section
+        </p>
       </Field>
 
       <label className="flex items-center gap-3 text-xs uppercase tracking-widest text-lime-dim">

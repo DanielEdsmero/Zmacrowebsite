@@ -35,6 +35,7 @@ type MacroInput = {
   price_usd: number;
   published: boolean;
   github_url: string | null;
+  youtube_url: string | null;
   cover_url?: string | null;
   file_path?: string;
   screenshots?: string[];
@@ -60,6 +61,7 @@ function readFields(formData: FormData): Omit<MacroInput, "cover_url" | "file_pa
     throw new Error("price must be a number");
 
   const github_url = str(formData, "github_url").trim() || null;
+  const youtube_url = str(formData, "youtube_url").trim() || null;
 
   return {
     name,
@@ -70,6 +72,7 @@ function readFields(formData: FormData): Omit<MacroInput, "cover_url" | "file_pa
     price_usd,
     published,
     github_url,
+    youtube_url,
   };
 }
 

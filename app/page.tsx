@@ -5,6 +5,7 @@ import { ScanlineOverlay } from "@/components/ScanlineOverlay";
 import { PageViewTracker } from "@/components/PageViewTracker";
 import { VouchMarquee } from "@/components/VouchMarquee";
 import { createClient } from "@/lib/supabase/server";
+import { getYouTubeEmbedUrl } from "@/lib/youtube";
 import type { Macro, ReviewWithMacro, VouchWithMacro } from "@/lib/types";
 
 export const revalidate = 30;
@@ -41,6 +42,7 @@ export default async function HomePage() {
   ]);
 
   const macros = (macroRes.data ?? []) as Macro[];
+  const tutorialMacros = macros.filter((m) => m.youtube_url);
 
   // Build a rating map: macroId -> { avg, count }
   type RatingEntry = { avg: number; count: number };
@@ -155,6 +157,45 @@ export default async function HomePage() {
           </section>
         )}
       </main>
+
+      {tutorialMacros.length > 0 && (
+        <section className="border-t border-lime-term/20 bg-black/20">
+          <div className="mx-auto max-w-6xl px-4 py-14">
+            <h2 className="mb-2 text-xs uppercase tracking-widest text-lime-dim">
+              // tutorials
+            </h2>
+            <p className="mb-8 text-xs text-lime-dim/60">
+              &gt; watch before you run
+            </p>
+            <div className="grid grid-cols-1 gap-10 lg:grid-cols-2">
+              {tutorialMacros.map((m) => {
+                const embedUrl = getYouTubeEmbedUrl(m.youtube_url!);
+                if (!embedUrl) return null;
+                return (
+                  <div key={m.id} className="flex flex-col gap-3">
+                    <Link
+                      href={`/macro/${m.slug}`}
+                      className="text-sm uppercase tracking-widest text-lime-term/80 transition-colors hover:text-lime-term"
+                    >
+                      {m.name}
+                    </Link>
+                    <div className="aspect-video w-full overflow-hidden border border-lime-term/40 bg-black">
+                      <iframe
+                        src={embedUrl}
+                        className="h-full w-full"
+                        allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; web-share"
+                        allowFullScreen
+                        title={`${m.name} tutorial`}
+                      />
+                    </div>
+                    <p className="text-xs text-lime-dim">{m.short_description}</p>
+                  </div>
+                );
+              })}
+            </div>
+          </div>
+        </section>
+      )}
 
       <footer className="mx-auto max-w-6xl px-4 py-10 text-xs text-lime-dim">
         &gt; end of transmission

@@ -6,6 +6,7 @@ import { PageViewTracker } from "@/components/PageViewTracker";
 import { ReviewForm } from "@/components/ReviewForm";
 import { ReviewList } from "@/components/ReviewList";
 import { createClient } from "@/lib/supabase/server";
+import { getYouTubeEmbedUrl } from "@/lib/youtube";
 import type { Macro, Review } from "@/lib/types";
 
 export const revalidate = 30;
@@ -116,6 +117,26 @@ export default async function MacroDetailPage(props: {
       </section>
 
       <main className="mx-auto grid max-w-6xl gap-10 px-4 py-10">
+        {macro.youtube_url && (() => {
+          const embedUrl = getYouTubeEmbedUrl(macro.youtube_url);
+          return embedUrl ? (
+            <section>
+              <h2 className="mb-3 text-xs uppercase tracking-widest text-lime-dim">
+                // tutorial
+              </h2>
+              <div className="aspect-video w-full overflow-hidden border border-lime-term/40 bg-black">
+                <iframe
+                  src={embedUrl}
+                  className="h-full w-full"
+                  allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; web-share"
+                  allowFullScreen
+                  title={`${macro.name} tutorial`}
+                />
+              </div>
+            </section>
+          ) : null;
+        })()}
+
         {macro.long_description ? (
           <section>
             <h2 className="mb-3 text-xs uppercase tracking-widest text-lime-dim">

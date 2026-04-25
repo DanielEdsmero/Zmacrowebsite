@@ -12,6 +12,7 @@ export type Macro = {
   published: boolean;
   download_count: number;
   github_url: string | null;
+  youtube_url: string | null;
   created_at: string;
   updated_at: string;
 };
