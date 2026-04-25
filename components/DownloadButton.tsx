@@ -18,7 +18,7 @@ export function DownloadButton({
 
   return (
     <form action={`/api/download/${macroId}`} method="POST">
-      <button type="submit" className={`${base} ${size}`}>
+      <button type="submit" className={`${base} ${size}`} onClick={e => e.stopPropagation()}>
         &gt; {label}
       </button>
     </form>
