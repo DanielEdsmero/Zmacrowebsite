@@ -11,8 +11,22 @@ export type Macro = {
   screenshots: string[];
   published: boolean;
   download_count: number;
+  github_url: string | null;
+  youtube_url: string | null;
+  is_premium: boolean;
+  stripe_price_id: string | null;
   created_at: string;
   updated_at: string;
+};
+
+export type Purchase = {
+  id: string;
+  macro_id: string;
+  stripe_session_id: string;
+  buyer_email: string | null;
+  download_token: string;
+  amount_paid: number | null;
+  created_at: string;
 };
 
 export type DownloadLog = {
@@ -21,4 +35,33 @@ export type DownloadLog = {
   ip: string | null;
   user_agent: string | null;
   downloaded_at: string;
+};
+
+export type Review = {
+  id: string;
+  macro_id: string;
+  author_name: string;
+  rating: number;
+  body: string | null;
+  safety_vote: "safe" | "virus" | "unsure" | null;
+  ip: string | null;
+  created_at: string;
+};
+
+export type ReviewWithMacro = Review & {
+  macros: { name: string; slug: string } | null;
+};
+
+export type Vouch = {
+  id: string;
+  macro_id: string | null;
+  image_url: string;
+  caption: string | null;
+  author_name: string;
+  ip: string | null;
+  created_at: string;
+};
+
+export type VouchWithMacro = Vouch & {
+  macros: { name: string; slug: string } | null;
 };

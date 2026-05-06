@@ -40,6 +40,10 @@ export function MacroForm({ mode, initial, action }: Props) {
     initial ? String(initial.price_usd ?? 0) : "0",
   );
   const [published, setPublished] = useState(initial?.published ?? false);
+  const [isPremium, setIsPremium] = useState(initial?.is_premium ?? false);
+  const [stripePriceId, setStripePriceId] = useState(initial?.stripe_price_id ?? "");
+  const [githubUrl, setGithubUrl] = useState(initial?.github_url ?? "");
+  const [youtubeUrl, setYoutubeUrl] = useState(initial?.youtube_url ?? "");
 
   function handleNameChange(value: string) {
     setName(value);
@@ -240,6 +244,62 @@ export function MacroForm({ mode, initial, action }: Props) {
           </p>
         ) : null}
       </Field>
+
+      <Field label="github url (optional)">
+        <input
+          name="github_url"
+          type="url"
+          placeholder="https://github.com/..."
+          value={githubUrl ?? ""}
+          onChange={(e) => setGithubUrl(e.target.value)}
+          className={inputCls}
+        />
+      </Field>
+
+      <Field label="youtube tutorial url (optional)">
+        <input
+          name="youtube_url"
+          type="url"
+          placeholder="https://youtube.com/watch?v=..."
+          value={youtubeUrl ?? ""}
+          onChange={(e) => setYoutubeUrl(e.target.value)}
+          className={inputCls}
+        />
+        <p className="mt-1 text-xs text-lime-dim">
+          paste a youtube link — the video will embed on the macro page and tutorials section
+        </p>
+      </Field>
+
+      <div className="border border-lime-term/20 p-4 flex flex-col gap-4">
+        <p className="text-xs uppercase tracking-widest text-lime-dim">// stripe / payment</p>
+
+        <label className="flex items-center gap-3 text-xs uppercase tracking-widest text-lime-dim">
+          <input
+            name="is_premium"
+            type="checkbox"
+            checked={isPremium}
+            onChange={(e) => setIsPremium(e.target.checked)}
+            className="h-4 w-4 accent-lime-term"
+          />
+          premium (requires payment to download)
+        </label>
+
+        {isPremium && (
+          <Field label="stripe price id (optional — leave blank to use price_usd above)">
+            <input
+              name="stripe_price_id"
+              type="text"
+              placeholder="price_1ABC... (from Stripe dashboard)"
+              value={stripePriceId}
+              onChange={(e) => setStripePriceId(e.target.value)}
+              className={inputCls}
+            />
+            <p className="mt-1 text-xs text-lime-dim">
+              if blank, a one-time charge of the price above is used automatically
+            </p>
+          </Field>
+        )}
+      </div>
 
       <label className="flex items-center gap-3 text-xs uppercase tracking-widest text-lime-dim">
         <input

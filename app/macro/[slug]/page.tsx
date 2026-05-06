@@ -1,9 +1,14 @@
 import { notFound } from "next/navigation";
 import { Nav } from "@/components/Nav";
 import { DownloadButton } from "@/components/DownloadButton";
+import { BuyButton } from "@/components/BuyButton";
 import { ScanlineOverlay } from "@/components/ScanlineOverlay";
+import { PageViewTracker } from "@/components/PageViewTracker";
+import { ReviewForm } from "@/components/ReviewForm";
+import { ReviewList } from "@/components/ReviewList";
 import { createClient } from "@/lib/supabase/server";
-import type { Macro } from "@/lib/types";
+import { getYouTubeEmbedUrl } from "@/lib/youtube";
+import type { Macro, Review } from "@/lib/types";
 
 export const revalidate = 30;
 
@@ -13,23 +18,41 @@ function formatPrice(price: number | string) {
   return `$${n.toFixed(2)}`;
 }
 
+function avgRating(reviews: Review[]) {
+  if (reviews.length === 0) return null;
+  const sum = reviews.reduce((s, r) => s + r.rating, 0);
+  return (sum / reviews.length).toFixed(1);
+}
+
 export default async function MacroDetailPage(props: {
   params: Promise<{ slug: string }>;
 }) {
   const params = await props.params;
   const supabase = await createClient();
-  const { data } = await supabase
+
+  const macroRes = await supabase
     .from("macros")
     .select("*")
     .eq("slug", params.slug)
     .eq("published", true)
     .maybeSingle();
 
-  if (!data) notFound();
-  const macro = data as Macro;
+  if (!macroRes.data) notFound();
+  const macro = macroRes.data as Macro;
+
+  const reviewsRes = await supabase
+    .from("reviews")
+    .select("*")
+    .eq("macro_id", macro.id)
+    .order("created_at", { ascending: false });
+
+  const reviews = (reviewsRes.data ?? []) as Review[];
+
+  const avg = avgRating(reviews);
 
   return (
     <>
+      <PageViewTracker macroId={macro.id} />
       <Nav />
 
       <section className="relative overflow-hidden border-b border-lime-term/30">
@@ -56,6 +79,12 @@ export default async function MacroDetailPage(props: {
               </span>
               <span>{formatPrice(macro.price_usd)}</span>
               <span>dl: {macro.download_count}</span>
+              {avg && (
+                <span className="text-lime-term">
+                  ★ {avg}{" "}
+                  <span className="text-lime-dim">({reviews.length})</span>
+                </span>
+              )}
             </div>
 
             <h1 className="text-2xl uppercase tracking-widest md:text-4xl">
@@ -66,12 +95,26 @@ export default async function MacroDetailPage(props: {
               {macro.short_description}
             </p>
 
-            <div className="pt-4">
-              <DownloadButton
-                macroId={macro.id}
-                variant="hero"
-                label={`DOWNLOAD ${macro.version}`}
-              />
+            <div className="flex flex-wrap items-center gap-3 pt-4">
+              {macro.is_premium ? (
+                <BuyButton macroId={macro.id} price={macro.price_usd} variant="hero" />
+              ) : (
+                <DownloadButton
+                  macroId={macro.id}
+                  variant="hero"
+                  label={`DOWNLOAD ${macro.version}`}
+                />
+              )}
+              {macro.github_url && (
+                <a
+                  href={macro.github_url}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="border border-lime-term/50 px-4 py-2 text-xs uppercase tracking-wider text-lime-dim transition-colors hover:border-lime-term hover:text-lime-term"
+                >
+                  &gt; github
+                </a>
+              )}
             </div>
           </div>
         </div>
@@ -79,6 +122,26 @@ export default async function MacroDetailPage(props: {
       </section>
 
       <main className="mx-auto grid max-w-6xl gap-10 px-4 py-10">
+        {macro.youtube_url && (() => {
+          const embedUrl = getYouTubeEmbedUrl(macro.youtube_url);
+          return embedUrl ? (
+            <section>
+              <h2 className="mb-3 text-xs uppercase tracking-widest text-lime-dim">
+                // tutorial
+              </h2>
+              <div className="aspect-video w-full overflow-hidden border border-lime-term/40 bg-black">
+                <iframe
+                  src={embedUrl}
+                  className="h-full w-full"
+                  allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; web-share"
+                  allowFullScreen
+                  title={`${macro.name} tutorial`}
+                />
+              </div>
+            </section>
+          ) : null;
+        })()}
+
         {macro.long_description ? (
           <section>
             <h2 className="mb-3 text-xs uppercase tracking-widest text-lime-dim">
@@ -116,6 +179,29 @@ export default async function MacroDetailPage(props: {
           <p className="text-sm">
             current: <span className="text-lime-term">{macro.version}</span>
           </p>
+        </section>
+
+        {/* Reviews */}
+        <section>
+          <h2 className="mb-4 text-xs uppercase tracking-widest text-lime-dim">
+            // reviews{" "}
+            {reviews.length > 0 && (
+              <span className="text-lime-term/60">({reviews.length})</span>
+            )}
+          </h2>
+          <ReviewList reviews={reviews} />
+        </section>
+
+        {/* Leave a review */}
+        <section>
+          <h2 className="mb-4 text-xs uppercase tracking-widest text-lime-dim">
+            // leave a review
+          </h2>
+          <p className="mb-4 text-xs text-lime-dim">
+            &gt; no account needed. tell others if it works, what it does, or
+            flag it as a virus.
+          </p>
+          <ReviewForm macroId={macro.id} macroSlug={macro.slug} />
         </section>
       </main>
 
