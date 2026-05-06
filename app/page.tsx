@@ -42,6 +42,8 @@ export default async function HomePage() {
   ]);
 
   const macros = (macroRes.data ?? []) as Macro[];
+  const freeMacros = macros.filter((m) => !m.is_premium);
+  const premiumMacros = macros.filter((m) => m.is_premium);
   const tutorialMacros = macros.filter((m) => m.youtube_url);
 
   // Build a rating map: macroId -> { avg, count }
@@ -89,16 +91,50 @@ export default async function HomePage() {
             &gt; no macros published yet.
           </p>
         ) : (
-          <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-3">
-            {macros.map((m) => (
-              <MacroCard
-                key={m.id}
-                macro={m}
-                avgRating={ratingMap[m.id]?.avg}
-                reviewCount={ratingMap[m.id]?.count}
-              />
-            ))}
-          </div>
+          <>
+            {/* Free macros */}
+            {freeMacros.length > 0 && (
+              <section>
+                <h2 className="mb-4 text-xs uppercase tracking-widest text-lime-dim">
+                  // macros
+                </h2>
+                <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-3">
+                  {freeMacros.map((m) => (
+                    <MacroCard
+                      key={m.id}
+                      macro={m}
+                      avgRating={ratingMap[m.id]?.avg}
+                      reviewCount={ratingMap[m.id]?.count}
+                    />
+                  ))}
+                </div>
+              </section>
+            )}
+
+            {/* Premium macros */}
+            {premiumMacros.length > 0 && (
+              <section className="mt-14">
+                <div className="mb-4 flex items-baseline gap-3">
+                  <h2 className="text-xs uppercase tracking-widest text-yellow-400">
+                    // premium macros
+                  </h2>
+                  <span className="text-[10px] text-lime-dim/60">
+                    &gt; paid drops — buy once, download forever
+                  </span>
+                </div>
+                <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-3">
+                  {premiumMacros.map((m) => (
+                    <MacroCard
+                      key={m.id}
+                      macro={m}
+                      avgRating={ratingMap[m.id]?.avg}
+                      reviewCount={ratingMap[m.id]?.count}
+                    />
+                  ))}
+                </div>
+              </section>
+            )}
+          </>
         )}
 
         {/* Recent reviews feed */}

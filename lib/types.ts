@@ -13,8 +13,20 @@ export type Macro = {
   download_count: number;
   github_url: string | null;
   youtube_url: string | null;
+  is_premium: boolean;
+  stripe_price_id: string | null;
   created_at: string;
   updated_at: string;
+};
+
+export type Purchase = {
+  id: string;
+  macro_id: string;
+  stripe_session_id: string;
+  buyer_email: string | null;
+  download_token: string;
+  amount_paid: number | null;
+  created_at: string;
 };
 
 export type DownloadLog = {

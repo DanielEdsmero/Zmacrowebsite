@@ -1,6 +1,7 @@
 import { notFound } from "next/navigation";
 import { Nav } from "@/components/Nav";
 import { DownloadButton } from "@/components/DownloadButton";
+import { BuyButton } from "@/components/BuyButton";
 import { ScanlineOverlay } from "@/components/ScanlineOverlay";
 import { PageViewTracker } from "@/components/PageViewTracker";
 import { ReviewForm } from "@/components/ReviewForm";
@@ -95,11 +96,15 @@ export default async function MacroDetailPage(props: {
             </p>
 
             <div className="flex flex-wrap items-center gap-3 pt-4">
-              <DownloadButton
-                macroId={macro.id}
-                variant="hero"
-                label={`DOWNLOAD ${macro.version}`}
-              />
+              {macro.is_premium ? (
+                <BuyButton macroId={macro.id} price={macro.price_usd} variant="hero" />
+              ) : (
+                <DownloadButton
+                  macroId={macro.id}
+                  variant="hero"
+                  label={`DOWNLOAD ${macro.version}`}
+                />
+              )}
               {macro.github_url && (
                 <a
                   href={macro.github_url}

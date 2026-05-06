@@ -34,6 +34,8 @@ type MacroInput = {
   version: string;
   price_usd: number;
   published: boolean;
+  is_premium: boolean;
+  stripe_price_id: string | null;
   github_url: string | null;
   youtube_url: string | null;
   cover_url?: string | null;
@@ -50,6 +52,8 @@ function readFields(formData: FormData): Omit<MacroInput, "cover_url" | "file_pa
   const priceRaw = str(formData, "price_usd").trim();
   const price_usd = priceRaw === "" ? 0 : Math.max(0, Number(priceRaw));
   const published = formData.get("published") === "on";
+  const is_premium = formData.get("is_premium") === "on";
+  const stripe_price_id = str(formData, "stripe_price_id").trim() || null;
 
   if (!name) throw new Error("name is required");
   if (!slug) throw new Error("slug is required");
@@ -59,6 +63,8 @@ function readFields(formData: FormData): Omit<MacroInput, "cover_url" | "file_pa
   if (!version) throw new Error("version is required");
   if (!Number.isFinite(price_usd))
     throw new Error("price must be a number");
+  if (is_premium && price_usd <= 0 && !stripe_price_id)
+    throw new Error("premium macros must have a price > 0 or a Stripe Price ID");
 
   const github_url = str(formData, "github_url").trim() || null;
   const youtube_url = str(formData, "youtube_url").trim() || null;
@@ -71,6 +77,8 @@ function readFields(formData: FormData): Omit<MacroInput, "cover_url" | "file_pa
     version,
     price_usd,
     published,
+    is_premium,
+    stripe_price_id,
     github_url,
     youtube_url,
   };

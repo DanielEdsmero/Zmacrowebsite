@@ -1,6 +1,7 @@
 import Link from "next/link";
 import type { Macro } from "@/lib/types";
 import { DownloadButton } from "./DownloadButton";
+import { BuyButton } from "./BuyButton";
 
 function formatPrice(price: number | string) {
   const n = Number(price);
@@ -22,10 +23,8 @@ export function MacroCard({
   return (
     <Link href={`/macro/${macro.slug}`} className="block">
       <article className="flex flex-col border border-lime-term/40 bg-black/60 transition-colors hover:border-lime-term">
-        <div className="aspect-video w-full overflow-hidden border-b border-lime-term/40 bg-black">
+        <div className="relative aspect-video w-full overflow-hidden border-b border-lime-term/40 bg-black">
           {macro.cover_url ? (
-            // Using <img> rather than next/image to avoid config churn for
-            // arbitrary Supabase project hostnames at build time.
             // eslint-disable-next-line @next/next/no-img-element
             <img
               src={macro.cover_url}
@@ -36,6 +35,11 @@ export function MacroCard({
             <div className="flex h-full w-full items-center justify-center text-xs text-lime-dim">
               [no cover]
             </div>
+          )}
+          {macro.is_premium && (
+            <span className="absolute top-2 right-2 border border-yellow-400/70 bg-black/80 px-2 py-0.5 text-[9px] uppercase tracking-widest text-yellow-400">
+              PREMIUM
+            </span>
           )}
         </div>
 
@@ -66,8 +70,14 @@ export function MacroCard({
           )}
 
           <div className="flex items-center justify-between pt-2">
-            <span className="text-sm">{price}</span>
-            <DownloadButton macroId={macro.id} />
+            <span className={`text-sm ${macro.is_premium ? "text-yellow-400" : ""}`}>
+              {price}
+            </span>
+            {macro.is_premium ? (
+              <BuyButton macroId={macro.id} price={macro.price_usd} />
+            ) : (
+              <DownloadButton macroId={macro.id} />
+            )}
           </div>
         </div>
       </article>
