@@ -1,6 +1,5 @@
 import { redirect } from "next/navigation";
 import Link from "next/link";
-import Stripe from "stripe";
 import { Nav } from "@/components/Nav";
 import { ScanlineOverlay } from "@/components/ScanlineOverlay";
 import { createAdminClient } from "@/lib/supabase/admin";
@@ -8,10 +7,19 @@ import type { Macro } from "@/lib/types";
 
 export const dynamic = "force-dynamic";
 
-function getStripe() {
-  const key = process.env.STRIPE_SECRET_KEY;
-  if (!key) throw new Error("STRIPE_SECRET_KEY not set");
-  return new Stripe(key);
+function paymongoAuth() {
+  const key = process.env.PAYMONGO_SECRET_KEY;
+  if (!key) throw new Error("PAYMONGO_SECRET_KEY not set");
+  return "Basic " + Buffer.from(key + ":").toString("base64");
+}
+
+async function fetchPaymongoSession(sessionId: string) {
+  const res = await fetch(`https://api.paymongo.com/v1/checkout_sessions/${sessionId}`, {
+    headers: { Authorization: paymongoAuth() },
+    cache: "no-store",
+  });
+  if (!res.ok) return null;
+  return res.json();
 }
 
 export default async function PurchaseSuccessPage(props: {
@@ -20,37 +28,36 @@ export default async function PurchaseSuccessPage(props: {
   const { session_id } = await props.searchParams;
   if (!session_id) redirect("/");
 
-  const stripe = getStripe();
-  let session: Stripe.Checkout.Session;
-  try {
-    session = await stripe.checkout.sessions.retrieve(session_id);
-  } catch {
-    redirect("/");
-  }
+  const sessionData = await fetchPaymongoSession(session_id);
+  if (!sessionData) redirect("/");
 
-  if (session.payment_status !== "paid") redirect("/");
+  const attrs = sessionData?.data?.attributes;
+  if (attrs?.status !== "completed") redirect("/");
 
-  const macroId = session.metadata?.macro_id;
+  const macroId = attrs?.metadata?.macro_id as string | undefined;
   if (!macroId) redirect("/");
 
   const supabase = createAdminClient();
 
   // Upsert purchase (handles race between webhook and page load)
+  const lineItems = attrs?.line_items as Array<{ amount: number }> | undefined;
+  const amountPaid = lineItems?.reduce((sum: number, li: { amount: number }) => sum + li.amount, 0) ?? null;
+  const buyerEmail = (attrs?.billing?.email ?? null) as string | null;
+
   await supabase.from("purchases").upsert(
     {
       macro_id: macroId,
-      stripe_session_id: session.id,
-      buyer_email: session.customer_details?.email ?? null,
-      amount_paid: session.amount_total,
+      payment_session_id: session_id,
+      buyer_email: buyerEmail,
+      amount_paid: amountPaid,
     },
-    { onConflict: "stripe_session_id", ignoreDuplicates: true },
+    { onConflict: "payment_session_id", ignoreDuplicates: true },
   );
 
-  // Fetch the purchase record to get the download_token
   const { data: purchase } = await supabase
     .from("purchases")
     .select("download_token")
-    .eq("stripe_session_id", session.id)
+    .eq("payment_session_id", session_id)
     .maybeSingle();
 
   const { data: macro } = await supabase
@@ -91,9 +98,9 @@ export default async function PurchaseSuccessPage(props: {
             </p>
           )}
 
-          {session.customer_details?.email && (
+          {buyerEmail && (
             <p className="text-xs text-lime-dim">
-              receipt sent to: {session.customer_details.email}
+              receipt sent to: {buyerEmail}
             </p>
           )}
         </div>

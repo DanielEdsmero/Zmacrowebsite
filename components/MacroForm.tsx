@@ -14,6 +14,28 @@ async function uploadFile(
   file: File,
   bucket: "covers" | "screenshots" | "files",
 ): Promise<{ path: string; publicUrl: string | null }> {
+  // Macro files can be very large (100MB+ EXEs); upload directly to Supabase
+  // via a signed URL to avoid hitting the Next.js request body limit.
+  if (bucket === "files") {
+    const urlRes = await fetch("/api/upload-url", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ filename: file.name }),
+    });
+    if (!urlRes.ok) {
+      const { error } = await urlRes.json().catch(() => ({ error: "could not get upload url" }));
+      throw new Error(error ?? "could not get upload url");
+    }
+    const { path, signedUrl } = await urlRes.json();
+    const putRes = await fetch(signedUrl, {
+      method: "PUT",
+      headers: { "Content-Type": file.type || "application/octet-stream" },
+      body: file,
+    });
+    if (!putRes.ok) throw new Error(`direct upload failed (${putRes.status})`);
+    return { path, publicUrl: null };
+  }
+
   const body = new FormData();
   body.append("file", file);
   body.append("bucket", bucket);
@@ -41,7 +63,9 @@ export function MacroForm({ mode, initial, action }: Props) {
   );
   const [published, setPublished] = useState(initial?.published ?? false);
   const [isPremium, setIsPremium] = useState(initial?.is_premium ?? false);
-  const [stripePriceId, setStripePriceId] = useState(initial?.stripe_price_id ?? "");
+  const [pricePHP, setPricePHP] = useState(
+    initial?.price_php != null ? String(initial.price_php) : "",
+  );
   const [githubUrl, setGithubUrl] = useState(initial?.github_url ?? "");
   const [youtubeUrl, setYoutubeUrl] = useState(initial?.youtube_url ?? "");
 
@@ -271,7 +295,7 @@ export function MacroForm({ mode, initial, action }: Props) {
       </Field>
 
       <div className="border border-lime-term/20 p-4 flex flex-col gap-4">
-        <p className="text-xs uppercase tracking-widest text-lime-dim">// stripe / payment</p>
+        <p className="text-xs uppercase tracking-widest text-lime-dim">// paymongo / payment</p>
 
         <label className="flex items-center gap-3 text-xs uppercase tracking-widest text-lime-dim">
           <input
@@ -285,17 +309,19 @@ export function MacroForm({ mode, initial, action }: Props) {
         </label>
 
         {isPremium && (
-          <Field label="stripe price id (optional — leave blank to use price_usd above)">
+          <Field label="price php in centavos (e.g. 50000 = ₱500) — leave blank to auto-convert from price usd">
             <input
-              name="stripe_price_id"
-              type="text"
-              placeholder="price_1ABC... (from Stripe dashboard)"
-              value={stripePriceId}
-              onChange={(e) => setStripePriceId(e.target.value)}
+              name="price_php"
+              type="number"
+              min="0"
+              step="1"
+              placeholder="50000"
+              value={pricePHP}
+              onChange={(e) => setPricePHP(e.target.value)}
               className={inputCls}
             />
             <p className="mt-1 text-xs text-lime-dim">
-              if blank, a one-time charge of the price above is used automatically
+              if blank, price usd × 56 is used as a fallback — set this for an accurate PHP price
             </p>
           </Field>
         )}
